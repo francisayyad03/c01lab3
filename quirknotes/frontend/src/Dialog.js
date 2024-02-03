@@ -3,7 +3,7 @@ import './App.css';
 
 const baseNote = {title: "", content: ""}
 
-function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
+function Dialog({open, initialNote, closeDialog, postNote: postNoteState, patchNote: patchNoteState}) {
 
     // -- Dialog props --
     const [note, setNote] = useState(baseNote)
@@ -43,7 +43,6 @@ function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
                 } else {
                     await response.json().then((data) => {
                         postNoteState(data.insertedId, note.title, note.content)
-                        //setStatus("Note posted!") // Can be replaced with close(), if you want!
                         close()
                     }) 
                 }
@@ -54,10 +53,36 @@ function Dialog({open, initialNote, closeDialog, postNote: postNoteState}) {
         } 
     }
 
-    const patchNote = (entry) => {
-        // Code for PATCH here
-    }
-
+    const patchNote = async (entry) => {
+        setStatus("Updating note...");
+    
+        try {
+            const response = await fetch(`http://localhost:4000/patchNote/${note._id}`, {
+                method: "PATCH",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ title: note.title, content: note.content })
+            });
+    
+            if (!response.ok) {
+                setStatus(`Error: ${response.statusText}`);
+                console.error("Server failed:", response.status);
+            } else {
+                await response.json().then((data) => {
+                    if (data) {
+                        patchNoteState(note._id, note.title, note.content);
+                        setStatus("Note updated successfully!");
+                        close();
+                    }
+                });
+            }
+        } catch (error) {
+            setStatus("Error trying to update note");
+            console.error("Fetch function failed:", error);
+        }
+    };
+    
     return (
         <dialog open={open} style={DialogStyle.dialog}>
             <input
